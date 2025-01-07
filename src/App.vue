@@ -41,10 +41,10 @@ onBeforeMount(async () => {
 })
 
 onMounted(async () => {
-  eventListen.value = await listen<InstanceEvent>('easytier://event', () => {
+  eventListen.value = await listen<InstanceEvent>('era://xvlan/event', () => {
     // console.log(event.payload)
   })
-  infoListen.value = await listen<NetworkInstanceInfo[]>('easytier://info', (event) => {
+  infoListen.value = await listen<NetworkInstanceInfo[]>('era://xvlan/info', (event) => {
     // console.log(event.payload)
     networkInfo.value = [...event.payload]
     networkList.value.forEach((n: Network) => {
@@ -56,7 +56,7 @@ onMounted(async () => {
       }
     })
   })
-  requestListen.value = await listen<InstanceEvent>('easylink://window/close', () => {
+  requestListen.value = await listen<InstanceEvent>('era://xvlan/window/close', () => {
     closeModel.value = true
   })
 })

@@ -1,7 +1,7 @@
 {
-  "productName": "easy-link",
+  "productName": "Era XVlan Mesh",
   "version": "0.1.0",
-  "identifier": "rs.easytier.link",
+  "identifier": "com.era.xvlan.mesh",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "EasyLink",
+        "title": "Era XVlan Mesh",
         "width": 685,
         "height": 400,
         "minHeight": 320,
@@ -24,8 +24,8 @@
     },
     "trayIcon": {
       "iconPath": "icons/32x32.png",
-      "tooltip": "EasyLink",
-      "title": "EasyLink",
+      "tooltip": "Era XVlan Mesh",
+      "title": "Era XVlan Mesh",
       "id": "main"
     }
   },

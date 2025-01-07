@@ -10,6 +10,9 @@ defaults:
   run:
     # necessary for windows
     shell: bash
+    
+env:
+  STORE_PATH: ${{ github.workspace }}/.pnpm-store
 
 jobs:
   build:
@@ -125,7 +128,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
-          releaseName: EasyLink v__VERSION__
+          releaseName: EraXvlanMesh v__VERSION__
           releaseBody: See the assets to download this version and install.
           releaseDraft: true
           prerelease: false

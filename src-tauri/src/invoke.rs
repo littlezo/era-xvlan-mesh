@@ -8,7 +8,7 @@ use std::{
 use anyhow::Context;
 use chrono::{DateTime, Local};
 use dashmap::DashMap;
-use easytier::{
+use era_xvlan::{
     common::{
         config::{ConfigLoader, NetworkIdentity, PeerConfig, TomlConfigLoader, VpnPortalConfig},
         global_ctx::GlobalCtxEvent,
@@ -219,7 +219,7 @@ pub async fn start_network_instance(app: AppHandle, cfg: NetworkConfig) -> Resul
                     flag = 0;
                 }
 
-                let _ = app.emit("easytier://info", &ret);
+                let _ = app.emit("era://xvlan/info", &ret);
                 ret.clear();
                 tokio::time::sleep(Duration::from_secs(1)).await;
             }

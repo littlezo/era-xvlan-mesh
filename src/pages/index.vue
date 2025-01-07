@@ -30,7 +30,7 @@ function randomToken() {
     currentNetwork.value.config.token = uuid(6)
 }
 
-async function startLink() {
+async function startXVlan() {
   await startNetwork((e) => {
     message.error(e, {
       closable: true,
@@ -39,7 +39,7 @@ async function startLink() {
   })
 }
 
-async function stopLink() {
+async function stopXVlan() {
   await stopNetwork()
 }
 </script>
@@ -73,10 +73,10 @@ async function stopLink() {
               :disabled="isCurrentNetworkRunning" :placeholder="t('page.index.networkSecretPlaceholder')"
               :style="{ width: '45%' }" />
           </n-input-group>
-          <n-button v-if="!isCurrentNetworkRunning" type="primary" size="medium" @click="startLink">
+          <n-button v-if="!isCurrentNetworkRunning" type="primary" size="medium" @click="startXVlan">
             {{ t('page.index.networking') }}
           </n-button>
-          <n-button v-else type="error" size="medium" @click="stopLink">
+          <n-button v-else type="error" size="medium" @click="stopXVlan">
             {{ t('page.index.stopNetworking') }}
           </n-button>
         </n-flex>

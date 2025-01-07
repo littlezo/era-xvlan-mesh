@@ -1,5 +1,3 @@
-# EasyTier GUI
+# Era XVlan Mesh GUI
 
-查看 [EasyTier 文档](https://easytier.rs) 以了解更多。
-
-Check out the [EasyTier Docs](https://easytier.rs/en/) to learn more.
+查看 [Era XVlan  文档](https://xvlan.era-x.cn) 以了解更多。

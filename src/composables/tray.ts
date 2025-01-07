@@ -10,8 +10,8 @@ export async function useTray(init: boolean = false) {
   let tray = await TrayIcon.getById(DEFAULT_TRAY_NAME)
   if (!tray) {
     tray = await TrayIcon.new({
-      tooltip: `EasyLink\n${pkg.version}`,
-      title: `EasyLink\n${pkg.version}`,
+      tooltip: `EraXvlanMesh\n${pkg.version}`,
+      title: `EraXvlanMesh\n${pkg.version}`,
       id: DEFAULT_TRAY_NAME,
       menu: await Menu.new({
         id: 'main',
@@ -26,7 +26,7 @@ export async function useTray(init: boolean = false) {
   }
 
   if (init) {
-    tray.setTooltip(`EasyLink\n${pkg.version}`)
+    tray.setTooltip(`EraXvlanMesh\n${pkg.version}`)
     tray.setMenu(await Menu.new({
       id: 'main',
       items: await generateMenuItem(),
@@ -37,6 +37,7 @@ export async function useTray(init: boolean = false) {
 }
 
 export async function generateMenuItem() {
+  // @ts-ignore
   return [
     await MenuItemExit(),
     await MenuItemShow(),
@@ -82,7 +83,7 @@ export async function setTrayRunState(isRunning: boolean = false) {
 export async function setTrayTooltip(tooltip: string) {
   if (tooltip) {
     const tray = await useTray()
-    tray.setTooltip(`EasyLink\n${pkg.version}\n${tooltip}`)
-    tray.setTitle(`EasyLink\n${pkg.version}\n${tooltip}`)
+    tray.setTooltip(`EraXvlanMesh\n${pkg.version}\n${tooltip}`)
+    tray.setTitle(`EraXvlanMesh\n${pkg.version}\n${tooltip}`)
   }
 }
