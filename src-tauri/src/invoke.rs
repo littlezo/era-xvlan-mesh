@@ -1,6 +1,7 @@
 use std::{
     collections::BTreeMap,
     net::Ipv4Addr,
+    // net::Ipv4Inet
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
 };
@@ -19,6 +20,8 @@ use era_xvlan::{
 };
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
+// use cidr::inet::Ipv4Inet;
+// use cidr::Ipv4Inet;
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
@@ -155,7 +158,8 @@ impl NetworkConfig {
 pub struct NetworkInstanceInfo {
     id: String,
     node: MyNodeInfo,
-    events: Vec<(DateTime<Local>, GlobalCtxEvent)>,
+    events: Vec<String>,
+    // events: Vec<(DateTime<Local>, GlobalCtxEvent)>,
     routes: Vec<Route>,
     peers: Vec<PeerInfo>,
     #[serde(rename(deserialize = "camelCase"))]
@@ -197,7 +201,7 @@ pub async fn start_network_instance(app: AppHandle, cfg: NetworkConfig) -> Resul
                     if let Some(info) = instance.get_running_info() {
                         ret.push(NetworkInstanceInfo {
                             id: instance.key().clone().to_lowercase(),
-                            node: info.my_node_info,
+                            node: info.my_node_info.unwrap(),
                             events: info.events,
                             routes: info.routes,
                             peers: info.peers,
@@ -246,7 +250,7 @@ pub fn collect_network_infos() -> Result<BTreeMap<String, NetworkInstanceInfo>, 
                 instance.key().clone(),
                 NetworkInstanceInfo {
                     id: instance.key().clone().to_lowercase(),
-                    node: info.my_node_info,
+                    node: info.my_node_info.unwrap(),
                     events: info.events,
                     routes: info.routes,
                     peers: info.peers,
