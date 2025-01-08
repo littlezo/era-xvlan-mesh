@@ -7,21 +7,22 @@ use std::{
 };
 
 use anyhow::Context;
-use chrono::{DateTime, Local};
+// use chrono::{DateTime, Local};
 use dashmap::DashMap;
 use era_xvlan::{
     common::{
         config::{ConfigLoader, NetworkIdentity, PeerConfig, TomlConfigLoader, VpnPortalConfig},
-        global_ctx::GlobalCtxEvent,
+        // global_ctx::GlobalCtxEvent,
     },
     launcher::{MyNodeInfo, NetworkInstance},
-    rpc::{PeerInfo, Route},
+    proto::cli::{PeerInfo, Route},
+    // rpc::{PeerInfo, Route},
     utils::PeerRoutePair,
 };
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 // use cidr::inet::Ipv4Inet;
-// use cidr::Ipv4Inet;
+use cidr::Ipv4Inet;
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
@@ -76,6 +77,12 @@ impl NetworkConfig {
         if !self.dhcp && self.ipv4.is_some() {
             let ipv4 = self.ipv4.clone().unwrap();
             if ipv4.len() > 0 {
+                // cfg.set_ipv4(Some(era_xvlan::proto::common::Ipv4Inet::from(ipv4.parse::<Ipv4Addr>().with_context(|| {
+                //     format!("failed to parse ipv4 address: {:?}", self.ipv4)
+                // })?))) // cidr::inet::Ipv4Inet::new
+                // cfg.set_ipv4(Some(cidr::inet::Ipv4Inet::new(ipv4.parse::<Ipv4Addr>().with_context(|| {
+                //     format!("failed to parse ipv4 address: {:?}", self.ipv4)
+                // })?)))
                 cfg.set_ipv4(Some(ipv4.parse::<Ipv4Addr>().with_context(|| {
                     format!("failed to parse ipv4 address: {:?}", self.ipv4)
                 })?))

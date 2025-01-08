@@ -19,7 +19,13 @@ export function DEFAULT_NETWORK_CONFIG(): NetworkConfig {
     id: uuid(),
     dhcp: true,
     token: uuid(6),
-    peerUrls: ['tcp://easytier.public.kkrainbow.top:11010'],
+    peerUrls: [
+      'tcp://xvlan.era-x.cn:11010',
+      'udp://xvlan.era-x.cn:11010',
+      'ws://xvlan.era-x.cn:11011',
+      'wg://xvlan.era-x.cn:11011',
+      'wss://xvlan.era-x.cn:11012',
+    ],
     listenerUrls: [
       'tcp://0.0.0.0:11010',
       'udp://0.0.0.0:11010',
@@ -74,7 +80,7 @@ export interface NetworkInfoStack {
 export interface NetworkInstanceInfo {
   id: string
   node: NodeInfo
-  events: Record<string, EasytierEvent>
+  events: Record<string, EraXVlanEvent>
   routes: Route[]
   peers: PeerInfo[]
   peer_route_pairs: PeerRoutePair[]
@@ -161,9 +167,9 @@ export interface PeerConnStats {
 export interface InstanceEvent {
   id: string
   time: string
-  event: EasytierEvent
+  event: EraXVlanEvent
 }
-export interface EasytierEvent {
+export interface EraXVlanEvent {
   TunDeviceReady?: string
   PeerAdded?: { PeerId: string }
   PeerRemoved?: { PeerId: string }

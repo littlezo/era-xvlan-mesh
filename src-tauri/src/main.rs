@@ -24,17 +24,14 @@ fn main() {
             Some(vec![AUTOSTART_ARG]),
         ))
         .plugin(tauri_plugin_notification::init())
-        .on_window_event(|window, event| match event {
-            tauri::WindowEvent::CloseRequested { api, .. } => {
-                let _ = window.emit("easylink://window/close", ());
-                api.prevent_close();
-            }
-            _ => {}
-        })
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_positioner::init())
+        .setup(|_app| {
+            // for logging config
+            return Ok(());
+        })
         .invoke_handler(tauri::generate_handler![
             parse_network_config,
             start_network_instance,
@@ -43,8 +40,17 @@ fn main() {
             test_config,
             is_autostart,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .on_window_event(|window, event| match event {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                let _ = window.emit("era-xvlan://mesh/window/close", ());
+                api.prevent_close();
+            }
+            _ => {}
+        })
+        .build(tauri::generate_context!())
+        .unwrap()
+        .run(|_app, _event| {});
+        // .expect("error while running tauri application");
 }
 
 fn check_sudo() -> bool {

@@ -367,7 +367,7 @@ declare global {
   export type { UseModule } from './types/modules'
   import('./types/modules')
   // @ts-ignore
-  export type { NetworkStatus, NetworkConfig, Network, NetworkOtherConfig, DataInfo, NetworkInfoStack, NetworkInstanceInfo, NodeInfo, StunInfo, Route, PeerInfo, PeerConnInfo, PeerRoutePair, TunnelInfo, PeerConnStats, InstanceEvent, EasytierEvent } from './types/network'
+  export type { NetworkStatus, NetworkConfig, Network, NetworkOtherConfig, DataInfo, NetworkInfoStack, NetworkInstanceInfo, NodeInfo, StunInfo, Route, PeerInfo, PeerConnInfo, PeerRoutePair, TunnelInfo, PeerConnStats, InstanceEvent, EraXVlanEvent } from './types/network'
   import('./types/network')
 }
 
