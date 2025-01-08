@@ -22,7 +22,6 @@ use era_xvlan::{
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 // use cidr::inet::Ipv4Inet;
-use cidr::Ipv4Inet;
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
