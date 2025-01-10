@@ -1,7 +1,6 @@
 use std::{
     collections::BTreeMap,
-    net::Ipv4Addr,
-    // net::Ipv4Inet
+    // net::Ipv4Addr,
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
 };
@@ -15,13 +14,12 @@ use era_xvlan::{
         // global_ctx::GlobalCtxEvent,
     },
     launcher::{MyNodeInfo, NetworkInstance},
-    proto::cli::{PeerInfo, Route},
     // rpc::{PeerInfo, Route},
+    proto::cli::{PeerInfo, Route},
     utils::PeerRoutePair,
 };
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
-// use cidr::inet::Ipv4Inet;
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
@@ -74,18 +72,17 @@ impl NetworkConfig {
 
         cfg.set_dhcp(self.dhcp);
         if !self.dhcp && self.ipv4.is_some() {
-            let ipv4 = self.ipv4.clone().unwrap();
-            if ipv4.len() > 0 {
-                // cfg.set_ipv4(Some(era_xvlan::proto::common::Ipv4Inet::from(ipv4.parse::<Ipv4Addr>().with_context(|| {
-                //     format!("failed to parse ipv4 address: {:?}", self.ipv4)
-                // })?))) // cidr::inet::Ipv4Inet::new
-                // cfg.set_ipv4(Some(cidr::inet::Ipv4Inet::new(ipv4.parse::<Ipv4Addr>().with_context(|| {
-                //     format!("failed to parse ipv4 address: {:?}", self.ipv4)
-                // })?)))
-                cfg.set_ipv4(Some(ipv4.parse::<Ipv4Addr>().with_context(|| {
-                    format!("failed to parse ipv4 address: {:?}", self.ipv4)
+            if let Some(ipv4) = &self.ipv4 {
+                cfg.set_ipv4(Some(ipv4.parse().with_context(|| {
+                    format!("failed to parse ipv4 address: {}", ipv4)
                 })?))
             }
+            // let ipv4 = self.ipv4.clone().unwrap();
+            // if ipv4.len() > 0 {
+            //     cfg.set_ipv4(Some(ipv4.parse::<Ipv4Addr>().with_context(|| {
+            //         format!("failed to parse ipv4 address: {:?}", self.ipv4)
+            //     })?))
+            // }
         }
 
         let mut peers = vec![];
@@ -207,7 +204,7 @@ pub async fn start_network_instance(app: AppHandle, cfg: NetworkConfig) -> Resul
                     if let Some(info) = instance.get_running_info() {
                         ret.push(NetworkInstanceInfo {
                             id: instance.key().clone().to_lowercase(),
-                            node: info.my_node_info.unwrap(),
+                            node: info.my_node_info.clone().unwrap(),
                             events: info.events,
                             routes: info.routes,
                             peers: info.peers,
@@ -229,7 +226,7 @@ pub async fn start_network_instance(app: AppHandle, cfg: NetworkConfig) -> Resul
                     flag = 0;
                 }
 
-                let _ = app.emit("era://xvlan/info", &ret);
+                let _ = app.emit("era://xvlan/mesh/info", &ret);
                 ret.clear();
                 tokio::time::sleep(Duration::from_secs(1)).await;
             }
@@ -256,7 +253,7 @@ pub fn collect_network_infos() -> Result<BTreeMap<String, NetworkInstanceInfo>, 
                 instance.key().clone(),
                 NetworkInstanceInfo {
                     id: instance.key().clone().to_lowercase(),
-                    node: info.my_node_info.unwrap(),
+                    node: info.my_node_info.clone().unwrap(),
                     events: info.events,
                     routes: info.routes,
                     peers: info.peers,

@@ -1,43 +1,17 @@
 {
   "$schema": "https://schema.tauri.app/config",
   "productName": "Era XVlan Mesh",
-  "version": "0.1.0",
+  "mainBinaryName": "Era XVlan Mesh",
   "identifier": "com.era.xvlan.mesh",
   "build": {
     "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
-  },
-  "app": {
-    "windows": [
-      {
-        "title": "Era XVlan Mesh",
-        "width": 685,
-        "height": 400,
-        "minHeight": 320,
-        "minWidth": 685,
-        "maximizable": false
-      }
-    ],
-    "security": {
-      "csp": null
-    },
-    "trayIcon": {
-      "iconPath": "icons/32x32.png",
-      "tooltip": "Era XVlan Mesh",
-      "title": "Era XVlan Mesh",
-      "id": "main"
-    }
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "app",
-      "dmg",
-      "deb",
-      "nsis"
-    ],
+    "targets": "all",
     "icon": [
       "icons/icon.png",
       "icons/icon.icns",
@@ -56,6 +30,25 @@
       "icons/Square284x284Logo.png",
       "icons/Square310x310Logo.png",
       "icons/StoreLogo.png"
-    ]
+    ],
+    "publisher": "Era XVlan Team. <<x@era-x.cn>>",
+    "copyright": "Copyright © 2022-present Era XVlan Team. All rights reserved.",
+    "createUpdaterArtifacts": false
+  },
+  "plugins": {},
+  "app": {
+    "windows": [
+      {
+        "title": "Era XVlan Mesh",
+        "width": 685,
+        "height": 400,
+        "minHeight": 320,
+        "minWidth": 685,
+        "maximizable": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
   }
 }

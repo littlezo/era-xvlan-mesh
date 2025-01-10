@@ -2,7 +2,9 @@
 const networkStore = useNetworkStore()
 
 const { isCurrentNetworkRunning, currentNetworkInfo, currentNetworkInfoData } = storeToRefs(networkStore)
-
+// watch(currentNetworkInfo, () => {
+//   console.log('currentNetworkInfo changed', currentNetworkInfo.value)
+// })
 const countTx = computed(() => {
   let tx = 0
   currentNetworkInfoData.value.forEach((d) => {

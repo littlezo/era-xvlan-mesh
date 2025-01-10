@@ -5,11 +5,12 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "-build": "vue-tsc --noEmit && vite build",
+    "vue:tsc": "vue-tsc --noEmit",
+    "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint": "eslint . --ignore-pattern src-tauri",
+    "lint:fix": "eslint . --ignore-pattern src-tauri --fix"
   },
   "dependencies": {
     "@tauri-apps/api": "catalog:",
@@ -18,6 +19,7 @@
     "@tauri-apps/plugin-os": "catalog:",
     "@tauri-apps/plugin-process": "catalog:",
     "@tauri-apps/plugin-shell": "catalog:",
+    "@unocss/reset": "^0.65.4",
     "@vueuse/core": "catalog:",
     "echarts": "catalog:",
     "highlight.js": "catalog:",

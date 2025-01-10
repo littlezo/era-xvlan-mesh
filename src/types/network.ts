@@ -80,7 +80,11 @@ export interface NetworkInfoStack {
 export interface NetworkInstanceInfo {
   id: string
   node: NodeInfo
-  events: Record<string, EraXVlanEvent>
+  events: {
+    time: string
+    event: EraXVlanEvent  
+  }[]
+  // Record<string, EraXVlanEvent>
   routes: Route[]
   peers: PeerInfo[]
   peer_route_pairs: PeerRoutePair[]

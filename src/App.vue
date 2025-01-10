@@ -41,22 +41,27 @@ onBeforeMount(async () => {
 })
 
 onMounted(async () => {
-  eventListen.value = await listen<InstanceEvent>('era://xvlan/event', () => {
-    // console.log(event.payload)
+  eventListen.value = await listen<InstanceEvent>('era://xvlan/event', (event) => {
+    console.log({ 'era://xvlan/event':event})
   })
-  infoListen.value = await listen<NetworkInstanceInfo[]>('era://xvlan/info', (event) => {
-    // console.log(event.payload)
+  infoListen.value = await listen<NetworkInstanceInfo[]>('era://xvlan/mesh/info', (event) => {
+    // console.log({"era://xvlan/mesh/info":event})
     networkInfo.value = [...event.payload]
     networkList.value.forEach((n: Network) => {
       const p = event.payload.find(i => i.id === n.config.id.toLowerCase())
-
+      const events = p?.events
+      if (events && Array.isArray(events)) {
+        // @ts-ignore
+        p.events = events.map((e: string) => JSON.parse(e) as NetworkInstanceInfo['events'][0])
+      }
       if (p) {
         n.detail = p
         pushInfoStack(n.config.id, p)
       }
     })
   })
-  requestListen.value = await listen<InstanceEvent>('era://xvlan/window/close', () => {
+  requestListen.value = await listen<InstanceEvent>('era://xvlan/mesh/window/close', () => {
+    console.log('era://xvlan/mesh/window/close')  
     closeModel.value = true
   })
 })
