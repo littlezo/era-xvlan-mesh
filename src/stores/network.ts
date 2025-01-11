@@ -107,13 +107,7 @@ export const useNetworkStore = defineStore('networkStore', () => {
       }
     }
   }
-  async function setLevel(level: 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace' = 'debug') {
-    try {
-      setLoggingLevel(level)
-    }
-    catch {
-    }
-  }
+
   return {
     networkList,
     networkInfo,
@@ -130,7 +124,6 @@ export const useNetworkStore = defineStore('networkStore', () => {
     startNetwork,
     stopNetwork,
     pushInfoStack,
-    setLoggingLevel: setLevel,
   }
 })
 

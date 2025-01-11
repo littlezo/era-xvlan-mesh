@@ -11,8 +11,8 @@ import { darkTheme, dateZhCN, zhCN } from 'naive-ui'
 const { locale, t } = useI18n()
 const appStore = useAppStore()
 const networkStore = useNetworkStore()
-const { isDark, config } = storeToRefs(appStore)
-const { pushInfoStack, startNetwork, setLoggingLevel } = networkStore
+const { isDark, config, setLoggingLevel } = storeToRefs(appStore)
+const { pushInfoStack, startNetwork } = networkStore
 const { networkInfo, networkList, currentNetworkInfo } = storeToRefs(networkStore)
 
 const theme = computed(() => (isDark.value ? darkTheme : null))

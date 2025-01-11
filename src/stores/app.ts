@@ -17,7 +17,13 @@ export const useAppStore = defineStore('appStore', () => {
     config.value.autostart.enable = ret
     return ret
   }
-
+  async function setLevel(level: 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace' = 'debug') {
+    try {
+      setLoggingLevel(level)
+    }
+    catch {
+    }
+  }
   return {
     isDark,
     showMultipleNetwork,
@@ -26,6 +32,7 @@ export const useAppStore = defineStore('appStore', () => {
     toggleDark,
     cleanAutostartNetwork,
     toggleAutostart,
+    setLoggingLevel: setLevel,
   }
 })
 
