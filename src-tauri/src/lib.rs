@@ -2,6 +2,7 @@
 
 use tauri::Emitter;
 use tauri_plugin_autostart::MacosLauncher;
+// use tauri_plugin_log::{Target, TargetKind};
 
 mod invoke;
 mod menu;
@@ -10,21 +11,19 @@ use crate::invoke::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    #[cfg(debug_assertions)]
-    tracing_subscriber::fmt::init();
-
     if !invoke::check_sudo() {
         std::process::exit(0);
     }
 
     let mut builder = tauri::Builder::default();
     // .plugin(tauri_plugin_single_instance::init());
-
+    // let logger = tauri_plugin_log::Builder::new();
     builder = builder
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             // 在这里写代码 ……
             invoke::focus_window(app)
         }))
+        // .plugin(logger.build())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             Some(vec![invoke::AUTOSTART_ARG]),
@@ -38,6 +37,7 @@ pub fn run() {
     builder
         .setup(|app| {
             let app_handle = app.handle();
+            let _ = invoke::setup_logging(app_handle);
             #[cfg(not(target_os = "android"))]
             let _ = menu::create_menu(app_handle);
             #[cfg(not(target_os = "android"))]

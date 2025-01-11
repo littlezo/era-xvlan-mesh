@@ -11,6 +11,7 @@ use tauri::{
 #[cfg(not(target_os = "android"))]
 pub fn create_menu<R: Runtime>(app_handle: &AppHandle<R>) -> tauri::Result<()> {
     // app_handle.remove_menu();
+
     let pkg_info = app_handle.package_info();
     let config = app_handle.config();
     let app_name = pkg_info.name.clone();
@@ -26,21 +27,22 @@ pub fn create_menu<R: Runtime>(app_handle: &AppHandle<R>) -> tauri::Result<()> {
     let window_menu = Submenu::with_id_and_items(
         app_handle,
         WINDOW_SUBMENU_ID,
-        "Window",
+        "窗口",
         true,
         &[
-            &PredefinedMenuItem::minimize(app_handle, None)?,
-            &PredefinedMenuItem::maximize(app_handle, None)?,
+            &PredefinedMenuItem::minimize(app_handle, Some("最小化窗口"))?,
+            &PredefinedMenuItem::maximize(app_handle, Some("缩放窗口"))?,
+            // &PredefinedMenuItem::zoom_window(app_handle,Some( "缩放窗口"))?,
             #[cfg(target_os = "macos")]
             &PredefinedMenuItem::separator(app_handle)?,
-            &PredefinedMenuItem::close_window(app_handle, None)?,
+            &PredefinedMenuItem::close_window(app_handle, Some("关闭窗口"))?,
         ],
     )?;
 
     let help_menu = Submenu::with_id_and_items(
         app_handle,
         HELP_SUBMENU_ID,
-        "Help",
+        "帮助",
         true,
         &[
             #[cfg(not(target_os = "macos"))]
@@ -49,7 +51,7 @@ pub fn create_menu<R: Runtime>(app_handle: &AppHandle<R>) -> tauri::Result<()> {
             &MenuItem::with_id(
                 app_handle,
                 "inspect",
-                "Devtools Inspect",
+                "开发者工具",
                 true,
                 None::<String>,
             )?,
@@ -62,22 +64,22 @@ pub fn create_menu<R: Runtime>(app_handle: &AppHandle<R>) -> tauri::Result<()> {
             #[cfg(target_os = "macos")]
             &Submenu::with_items(
                 app_handle,
-                app_name,
+                app_name.clone(),
                 true,
                 &[
-                    &PredefinedMenuItem::about(app_handle, None, Some(about_metadata))?,
+                    &PredefinedMenuItem::about(app_handle, Some(&format!("关于 {}", app_name.clone())), Some(about_metadata))?,
                     &PredefinedMenuItem::separator(app_handle)?,
-                    &PredefinedMenuItem::hide(app_handle, None)?,
+                    &PredefinedMenuItem::hide(app_handle, Some("隐藏窗口"))?,
                     &PredefinedMenuItem::separator(app_handle)?,
-                    &PredefinedMenuItem::quit(app_handle, None)?,
+                    &PredefinedMenuItem::quit(app_handle, Some("退出"))?,
                 ],
             )?,
             #[cfg(target_os = "macos")]
             &Submenu::with_items(
                 app_handle,
-                "View",
+                "显示",
                 true,
-                &[&PredefinedMenuItem::fullscreen(app_handle, None)?],
+                &[&PredefinedMenuItem::fullscreen(app_handle, Some("全屏显示"))?],
             )?,
             &window_menu,
             &help_menu,

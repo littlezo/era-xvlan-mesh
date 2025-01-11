@@ -1,16 +1,18 @@
 use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicBool, Ordering},
-    time::Duration,
     sync::{Mutex, OnceLock},
+    time::Duration,
 };
 
 use dashmap::DashMap;
+
 use era_xvlan::{
-    common::config::ConfigLoader,
+    common::config::{ConfigLoader, FileLoggerConfig, TomlConfigLoader},
     launcher::{NetworkConfig, NetworkInstance, NetworkInstanceRunningInfo},
-    utils::NewFilterSender,
+    utils::{self, NewFilterSender},
 };
+
 use tauri::{AppHandle, Emitter, Manager as _, Runtime};
 
 pub const AUTOSTART_ARG: &str = "--autostart";
@@ -20,7 +22,8 @@ static INSTANCE_MAP: once_cell::sync::Lazy<DashMap<String, NetworkInstance>> =
 
 static EMIT_INSTANCE_INFO: once_cell::sync::Lazy<AtomicBool> =
     once_cell::sync::Lazy::new(|| AtomicBool::new(false));
-pub static LOGGER_LEVEL_SENDER: OnceLock<Mutex<Option<NewFilterSender>>> = OnceLock::new();
+
+static LOGGER_LEVEL_SENDER: OnceLock<Mutex<Option<NewFilterSender>>> = OnceLock::new();
 
 #[tauri::command]
 pub fn era_xvlan_version() -> Result<String, String> {
@@ -31,19 +34,19 @@ pub fn era_xvlan_version() -> Result<String, String> {
 pub fn is_autostart() -> Result<bool, String> {
     let args: Vec<String> = std::env::args().collect();
     println!("{:?}", args);
-    #[cfg(debug_assertions)]
-    eprintln!("args: {:?}", args); // 使用 eprintln!
+    // #[cfg(debug_assertions)]
+    // eprintln!("args: {:?}", args); // 使用 eprintln!
     Ok(args.contains(&crate::AUTOSTART_ARG.to_owned()))
 }
 
 #[tauri::command]
 pub fn parse_network_config(cfg: NetworkConfig) -> Result<String, String> {
     println!("cfg: {:?}", cfg);
-    eprintln!("cfg: {:?}", cfg); // 使用 eprintln!
+    // eprintln!("cfg: {:?}", cfg); // 使用 eprintln!
     let toml = cfg
         .gen_config()
         .map_err(|e| format!("failed to parse peer uri: {} cfg: {:?}", e.to_string(), cfg))?;
-    eprintln!("toml: {:?}", toml);
+    println!("toml: {:?}", toml);
     Ok(toml.dump())
 }
 
@@ -59,7 +62,7 @@ pub async fn start_network_instance(app: AppHandle, cfg: NetworkConfig) -> Resul
 
     if !EMIT_INSTANCE_INFO.load(Ordering::Relaxed) {
         EMIT_INSTANCE_INFO.store(true, Ordering::Relaxed);
-        tracing::info!("instance info emit started");
+        println!("instance info emit started");
         tokio::spawn(async move {
             let mut ret = vec![];
             let mut flag = 0;
@@ -74,7 +77,7 @@ pub async fn start_network_instance(app: AppHandle, cfg: NetworkConfig) -> Resul
                     flag += 1;
                     if flag > 5 {
                         EMIT_INSTANCE_INFO.store(false, Ordering::Relaxed);
-                        tracing::info!("instance info emit stopped");
+                        println!("instance info emit stopped");
                         break;
                     }
                 } else {
@@ -95,7 +98,7 @@ pub async fn start_network_instance(app: AppHandle, cfg: NetworkConfig) -> Resul
 #[tauri::command]
 pub fn stop_network_instance(id: String) -> Result<(), String> {
     let _ = INSTANCE_MAP.remove(&id);
-    tracing::info!("instance {} stopped", id);
+    println!("instance {} stopped", id);
     Ok(())
 }
 
@@ -200,4 +203,35 @@ pub fn focus_window(app: &AppHandle) {
         .expect("Sorry, no window found")
         .set_focus()
         .expect("Can't Bring Window to Focus");
+}
+
+pub fn setup_logging<R: Runtime>(
+    app_handle: &AppHandle<R>,
+    // loggerr: &tauri_plugin_log::Builder,
+) -> tauri::Result<()> {
+    // for logging config
+    let Ok(log_dir) = app_handle.path().app_log_dir() else {
+        return Ok(());
+    };
+    let config = TomlConfigLoader::default();
+    config.set_file_logger_config(FileLoggerConfig {
+        dir: Some(log_dir.to_string_lossy().to_string()),
+        level: None,
+        file: None,
+    });
+    // loggerr.target(
+    //     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Folder {
+    //         path: log_dir,
+    //         file_name: None,
+    //     }),
+    // ).level(log::LevelFilter::Info);
+    let Ok(Some(logger_reinit)) = utils::init_logger(config, true) else {
+        return Ok(());
+    };
+
+    LOGGER_LEVEL_SENDER.get_or_init(|| Mutex::new(Some(logger_reinit)));
+    let _ = set_logging_level("warn".to_string());
+    #[cfg(debug_assertions)]
+    // tracing_subscriber::fmt::init();
+    Ok(())
 }
