@@ -6,14 +6,14 @@ export const useNetworkStore = defineStore('networkStore', () => {
   const networkInfo = ref<NetworkInstanceInfo[]>([])
 
   const networkFilter = ref<string>('')
-  const networkCurrentId = ref<string>(networkList.value.length ? networkList.value[0].config.id : '')
+  const networkCurrentId = useStorage<string>('networkCurrentId', networkList.value.length ? networkList.value[0].config.instance_id : '')
 
   const currentNetwork = computed<Network | undefined>(() => {
-    return networkList.value.find(item => item.config.id === networkCurrentId.value)
+    return networkList.value.find(item => item.config.instance_id === networkCurrentId.value)
   })
 
   const currentNetworkInfo = computed<NetworkInstanceInfo | undefined>(() => {
-    return networkInfo.value.find(item => item.id.toLowerCase() === networkCurrentId.value.toLowerCase())
+    return networkInfo.value.find(item => item.instance_id.toLowerCase() === networkCurrentId.value.toLowerCase())
   })
 
   const currentNetworkInfoData = computed<DataInfo[]>(() => {
@@ -21,7 +21,7 @@ export const useNetworkStore = defineStore('networkStore', () => {
   })
 
   const isCurrentNetworkRunning = computed<boolean>(() => {
-    return !!networkInfo.value.find(i => i.id.toLowerCase() === networkCurrentId.value.toLowerCase())
+    return !!networkInfo.value.find(i => i.instance_id.toLowerCase() === networkCurrentId.value.toLowerCase())
   })
 
   const networkInfoDataStack = reactive<Record<string, NetworkInfoStack[]>>({})
@@ -38,7 +38,7 @@ export const useNetworkStore = defineStore('networkStore', () => {
 
     networkInfoDataStack[id].push({
       time: nowTime,
-      id: info.id,
+      id: info.instance_id,
       node: info.node,
       peerRoutePair: info.peer_route_pairs,
     })
@@ -58,43 +58,62 @@ export const useNetworkStore = defineStore('networkStore', () => {
   }
 
   function removeNetwork(id: string) {
-    networkList.value = networkList.value.filter(network => network.config.id !== id)
+    networkList.value = networkList.value.filter(network => network.config.instance_id !== id)
   }
 
-  async function startNetwork(callback: (e: any) => void, id: string | undefined = undefined) {
-    const network = id ? networkList.value.find(network => network.config.id === id) : currentNetwork.value
+  async function startNetwork(callback: (e: any) => void, id: string | undefined = void 0) {
+    id ||= networkCurrentId.value
+    if (id === void 0 || id === '') {
+      callback('Network id is required')
+      return
+    }
+    const network = networkList.value.find(network => network.config.instance_id === id)
     if (network) {
-      const cfg: NetworkConfig = JSON.parse(JSON.stringify(network.config))
+      // eslint-disable-next-line no-console
+      console.info('startNetwork', network)
+      const cfg: NetworkConfig = { ...network.config }
+      // eslint-disable-next-line no-console
+      console.log('parseNetworkConfig', cfg)
       if (network.otherConfig.token) {
-        delete cfg.networkName
-        delete cfg.networkSecret
+        // @ts-expect-error ts-migrate(2345)
+        delete cfg.network_name
+        // @ts-expect-error ts-migrate(2345)
+        delete cfg.network_secret
       }
       else {
         delete cfg.token
       }
-      // link!
       try {
-        await parseNetworkConfig(cfg)
+        const res = await parseNetworkConfig(cfg)
+        // eslint-disable-next-line no-console
+        console.log('parseNetworkConfig', res)
         await startNetworkInstance(cfg)
       }
       catch (e: any) {
+        console.error(e)
         callback(e)
       }
     }
   }
 
   async function stopNetwork(callback: (e: any) => void = () => { }, id: string | undefined = undefined) {
-    const network = id ? networkList.value.find(network => network.config.id === id) : currentNetwork.value
+    const network = id ? networkList.value.find(network => network.config.instance_id === id) : currentNetwork.value
     if (network) {
       try {
-        await stopNetworkInstance(network.config.id)
+        await stopNetworkInstance(network.config.instance_id)
       }
       catch (e: any) {
         callback(e)
       }
     }
   }
-
+  async function setLevel(level: 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace' = 'debug') {
+    try {
+      setLoggingLevel(level)
+    }
+    catch {
+    }
+  }
   return {
     networkList,
     networkInfo,
@@ -111,6 +130,7 @@ export const useNetworkStore = defineStore('networkStore', () => {
     startNetwork,
     stopNetwork,
     pushInfoStack,
+    setLoggingLevel: setLevel,
   }
 })
 

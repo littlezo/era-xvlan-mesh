@@ -1,44 +1,33 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use tauri::{
-    menu::{Menu, MenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Emitter,
-    Manager, // Runtime,
-};
+
+use tauri::Emitter;
 use tauri_plugin_autostart::MacosLauncher;
 
-pub mod invoke;
+mod invoke;
+mod menu;
 
 use crate::invoke::*;
-
-pub const AUTOSTART_ARG: &str = "--autostart";
-
-fn toggle_window_visibility<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
-    if let Some(window) = app.get_webview_window("main") {
-        if window.is_visible().unwrap_or_default() {
-            let _ = window.hide();
-        } else {
-            let _ = window.show();
-            let _ = window.set_focus();
-        }
-    }
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(debug_assertions)]
     tracing_subscriber::fmt::init();
 
-    if !check_sudo() {
+    if !invoke::check_sudo() {
         std::process::exit(0);
     }
 
     let mut builder = tauri::Builder::default();
+    // .plugin(tauri_plugin_single_instance::init());
 
     builder = builder
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // 在这里写代码 ……
+            invoke::focus_window(app)
+        }))
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
-            Some(vec![AUTOSTART_ARG]),
+            Some(vec![invoke::AUTOSTART_ARG]),
         ))
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_process::init())
@@ -48,73 +37,24 @@ pub fn run() {
 
     builder
         .setup(|app| {
-            // for logging config
-            // for tray icon, menu need to be built in js
+            let app_handle = app.handle();
             #[cfg(not(target_os = "android"))]
-            {
-                let branding = MenuItem::with_id(
-                    app,
-                    "name",
-                    app.package_info().name.clone(),
-                    false,
-                    None::<String>,
-                )?;
-                let _quit = MenuItem::with_id(app, "quit", "Quit", true, None::<String>)?;
-                let _inspect = MenuItem::with_id(app, "inspect", "Inspect", true, None::<String>)?;
-                let _menu = Menu::with_items(app, &[&branding, &_inspect, &_quit])?;
-
-                TrayIconBuilder::with_id("main")
-                    .tooltip(app.package_info().name.clone())
-                    .icon(app.default_window_icon().unwrap().clone())
-                    .menu(&_menu)
-                    .show_menu_on_left_click(false)
-                    .on_menu_event(move |app, event| match event.id.as_ref() {
-                        "quit" => {
-                            app.exit(0);
-                        }
-                        "inspect" => {
-                            if let Some(window) = app.get_webview_window("main") {
-                                if window.is_devtools_open() {
-                                    window.close_devtools();
-                                } else {
-                                    window.open_devtools();
-                                }
-                            };
-                        }
-                        _ => {}
-                    })
-                    .on_tray_icon_event(|tray, event| {
-                        if let TrayIconEvent::Click {
-                            button: MouseButton::Left,
-                            button_state: MouseButtonState::Up,
-                            ..
-                        } = event
-                        {
-                            let app = tray.app_handle();
-                            toggle_window_visibility(app);
-                        }
-                    })
-                    .icon_as_template(false)
-                    .build(app)?;
-                #[cfg(debug_assertions)]
-                {
-                    if let Some(window) = app.get_webview_window("main") {
-                        if !window.is_devtools_open() {
-                            window.open_devtools();
-                        }
-                    }
-                }
-            }
-
+            let _ = menu::create_menu(app_handle);
+            #[cfg(not(target_os = "android"))]
+            let _ = menu::create_tray(app_handle);
             return Ok(());
         })
         .invoke_handler(tauri::generate_handler![
-            parse_network_config,
-            start_network_instance,
-            stop_network_instance,
-            collect_network_infos,
-            test_config,
-            is_autostart,
+            invoke::parse_network_config,
+            invoke::start_network_instance,
+            invoke::stop_network_instance,
+            invoke::collect_network_infos,
+            invoke::get_os_hostname,
+            invoke::set_logging_level,
+            invoke::set_tun_fd,
+            invoke::is_autostart,
+            invoke::test_config,
+            invoke::era_xvlan_version
         ])
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } => {
@@ -127,20 +67,4 @@ pub fn run() {
         .unwrap()
         .run(|_app, _event| {});
     // .expect("error while running tauri application");
-}
-
-fn check_sudo() -> bool {
-    let is_elevated = privilege::user::privileged();
-    if !is_elevated {
-        let Ok(exe) = std::env::current_exe() else {
-            return true;
-        };
-        let args: Vec<String> = std::env::args().collect();
-        let mut elevated_cmd = privilege::runas::Command::new(exe);
-        if args.contains(&AUTOSTART_ARG.to_owned()) {
-            elevated_cmd.arg(AUTOSTART_ARG);
-        }
-        let _ = elevated_cmd.force_prompt(true).hide(true).gui(true).run();
-    }
-    is_elevated
 }

@@ -127,10 +127,12 @@ declare global {
   const runNetworkInstance: typeof import('./composables/network')['runNetworkInstance']
   const setActivePinia: typeof import('pinia')['setActivePinia']
   const setAutostart: typeof import('./composables/autostart')['setAutostart']
+  const setLoggingLevel: typeof import('./composables/network')['setLoggingLevel']
   const setMapStoreSuffix: typeof import('pinia')['setMapStoreSuffix']
   const setTrayMenu: typeof import('./composables/tray')['setTrayMenu']
   const setTrayRunState: typeof import('./composables/tray')['setTrayRunState']
   const setTrayTooltip: typeof import('./composables/tray')['setTrayTooltip']
+  const setTunFd: typeof import('./composables/network')['setTunFd']
   const shallowReactive: typeof import('vue')['shallowReactive']
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
@@ -482,10 +484,12 @@ declare module 'vue' {
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
     readonly setAutostart: UnwrapRef<typeof import('./composables/autostart')['setAutostart']>
+    readonly setLoggingLevel: UnwrapRef<typeof import('./composables/network')['setLoggingLevel']>
     readonly setMapStoreSuffix: UnwrapRef<typeof import('pinia')['setMapStoreSuffix']>
     readonly setTrayMenu: UnwrapRef<typeof import('./composables/tray')['setTrayMenu']>
     readonly setTrayRunState: UnwrapRef<typeof import('./composables/tray')['setTrayRunState']>
     readonly setTrayTooltip: UnwrapRef<typeof import('./composables/tray')['setTrayTooltip']>
+    readonly setTunFd: UnwrapRef<typeof import('./composables/network')['setTunFd']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>

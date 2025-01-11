@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { hostname } from '@tauri-apps/plugin-os'
-import VChart from 'vue-echarts'
-import { use } from 'echarts/core'
-import { BarChart, GraphChart, LineChart } from 'echarts/charts'
+import type { BarSeriesOption, LineSeriesOption } from 'echarts/charts'
 import type {
   AxisPointerComponentOption,
   GridComponentOption,
   LegendComponentOption,
   TooltipComponentOption,
 } from 'echarts/components'
+import type { ComposeOption } from 'echarts/core'
+import { hostname } from '@tauri-apps/plugin-os'
+import { BarChart, GraphChart, LineChart } from 'echarts/charts'
 import {
   GridComponent,
   LegendComponent,
   TooltipComponent,
 } from 'echarts/components'
+import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import type { ComposeOption } from 'echarts/core'
-import type { BarSeriesOption, LineSeriesOption } from 'echarts/charts'
+import VChart from 'vue-echarts'
 
 const props = defineProps<{
   stack?: number
@@ -33,7 +33,7 @@ type BaseEChartsOption = ComposeOption<
   | AxisPointerComponentOption
 >
 
-const deviceName = ref('')
+const device_name = ref('')
 const stack = computed(() => props.stack || 30)
 
 const networkStore = useNetworkStore()
@@ -140,7 +140,7 @@ const baseOption = computed<BaseEChartsOption>(() => {
 })
 
 onMounted(async () => {
-  deviceName.value = await hostname() || ''
+  device_name.value = await hostname() || ''
 })
 
 function updateBaseChartData() {
@@ -192,7 +192,7 @@ function updateTopologyChartData() {
       nodesTemp.push({
         // id: c.peer_id.toString(),
         id: ip,
-        name: currentNetwork.value?.config.deviceName || deviceName.value,
+        name: currentNetwork.value?.config.device_name || device_name.value,
         symbolSize: 45,
         value: ip,
       })

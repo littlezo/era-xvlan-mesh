@@ -47,6 +47,7 @@ component:
     subnetProxy: Subnet Proxy
     rpcPortal: RPC Portal
     listenerUrl: Listener Urls
+    presetListenerUrl: Preset Listener Urls
     empty: The network configuration does not exist
     chooseOther: Look at other things
     reset: Reset

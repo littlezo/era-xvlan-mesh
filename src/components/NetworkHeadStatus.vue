@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Utils } from '@era-xvlan/kit'
+
 const networkStore = useNetworkStore()
 
 const { isCurrentNetworkRunning, currentNetworkInfo, currentNetworkInfoData } = storeToRefs(networkStore)
@@ -26,7 +28,7 @@ const countRx = computed(() => {
   <n-flex align="center">
     <n-badge :type="isCurrentNetworkRunning ? 'success' : 'error'" dot processing ml-2 />
     <n-tag v-if="currentNetworkInfo?.running && currentNetworkInfo.node.virtual_ipv4" type="info" :bordered="false" size="small">
-      {{ `IP: ${currentNetworkInfo.node.virtual_ipv4}` }}
+      {{ `IP: ${Utils.ipv4InetToString(currentNetworkInfo.node.virtual_ipv4)}` }}
     </n-tag>
     <n-tag v-if="currentNetworkInfo?.running && countTx && countRx" :bordered="false">
       {{ `${countTx} / ${countRx}` }}

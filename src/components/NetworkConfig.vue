@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { hostname } from '@tauri-apps/plugin-os'
+import { h } from 'vue'
 
 const appStore = useAppStore()
 const networkStore = useNetworkStore()
@@ -8,7 +9,7 @@ const { cleanAutostartNetwork } = appStore
 const { showMultipleNetwork } = storeToRefs(appStore)
 const { removeNetwork, addNetwork } = networkStore
 const { networkList, currentNetwork, networkCurrentId, isCurrentNetworkRunning } = storeToRefs(networkStore)
-const deviceName = ref('')
+const device_name = ref('')
 
 function onlyAllowHostname(value: string) {
   return !value || /^[\u4E00-\u9FA5a-z0-9\-]*$/i.test(value)
@@ -17,16 +18,16 @@ function onlyAllowHostname(value: string) {
 function resetConfig() {
   if (currentNetwork.value) {
     addNetwork()
-    cleanAutostartNetwork(currentNetwork.value.config.id)
-    removeNetwork(currentNetwork.value.config.id)
+    cleanAutostartNetwork(currentNetwork.value.config.instance_id)
+    removeNetwork(currentNetwork.value.config.instance_id)
     nextTick(() => {
-      networkCurrentId.value = networkList.value[networkList.value.length - 1]?.config.id || ''
+      networkCurrentId.value = networkList.value[networkList.value.length - 1]?.config.instance_id || ''
     })
   }
 }
 
 onMounted(async () => {
-  deviceName.value = await hostname() || ''
+  device_name.value = await hostname() || ''
 })
 </script>
 
@@ -56,8 +57,8 @@ onMounted(async () => {
           </n-form-item>
           <n-form-item :label="t('component.networkConfig.deviceName')">
             <n-input
-              v-model:value="currentNetwork.config.deviceName"
-              :placeholder="t('component.networkConfig.deviceNamePlaceholder', [deviceName])"
+              v-model:value="currentNetwork.config.device_name"
+              :placeholder="t('component.networkConfig.deviceNamePlaceholder', [device_name])"
               :allow-input="onlyAllowHostname"
             />
           </n-form-item>
@@ -70,14 +71,30 @@ onMounted(async () => {
                 </n-checkbox>
               </n-flex>
             </template>
-            <n-input
-              v-model:value="currentNetwork.config.ipv4" :disabled="currentNetwork.config.dhcp || isCurrentNetworkRunning"
-              :placeholder="t('component.networkConfig.virtualIPPlaceholder')"
-            />
+            <n-input-group>
+              <n-input
+                v-model:value="currentNetwork.config.virtual_ipv4"
+                :disabled="currentNetwork.config.dhcp || isCurrentNetworkRunning"
+                :placeholder="t('component.networkConfig.virtualIPPlaceholder')" type="text"
+                :style="{ width: '80%' }"
+              />
+              <n-input-number
+                v-model:value="currentNetwork.config.network_length" :min="16" :max="32"
+                :style="{ width: '20%' }" :show-button="false" :step="1"
+              >
+                <template #prefix>
+                  /
+                </template>
+              </n-input-number>
+            </n-input-group>
+            <!-- <n-input v-model:value="currentNetwork.config.ipv4"
+              :disabled="currentNetwork.config.dhcp || isCurrentNetworkRunning"
+              :placeholder="t('component.networkConfig.virtualIPPlaceholder')" /> -->
           </n-form-item>
           <n-form-item :label="t('component.networkConfig.peer')">
             <n-select
-              v-model:value="currentNetwork.config.peerUrls" filterable tag multiple
+              v-model:value="currentNetwork.config.peer_urls" filterable tag multiple
+              :options="currentNetwork.config.preset_peer_urls"
               :placeholder="t('component.networkConfig.peerPlaceholder')"
             />
           </n-form-item>
@@ -91,19 +108,43 @@ onMounted(async () => {
             <n-dynamic-tags />
           </n-form-item>
           <n-form-item :label="t('component.networkConfig.rpcPortal')">
-            <n-input-number v-model:value="currentNetwork.config.rpcPort" :min="0" :max="65535" />
+            <n-input-number v-model:value="currentNetwork.config.rpc_port" :min="0" :max="65535" />
+          </n-form-item>
+          <n-form-item :label="t('component.networkConfig.presetListenerUrl')">
+            <n-select
+              v-model:value="currentNetwork.config.listener_urls" tag multiple
+              :options="currentNetwork.config.preset_listener_urls" max-tag-count="responsive"
+              :placeholder="t('component.networkConfig.presetListenerUrl')" :style="{ width: '100%' }"
+            />
           </n-form-item>
           <n-form-item :label="t('component.networkConfig.listenerUrl')">
-            <n-dynamic-input v-model:value="currentNetwork.config.listenerUrls" :disabled="isCurrentNetworkRunning" />
+            <n-dynamic-input
+              v-model:value="currentNetwork.config.listener_urls"
+              :options="currentNetwork.config.preset_listener_urls" :disabled="isCurrentNetworkRunning"
+            />
           </n-form-item>
           <n-form-item :label="t('component.networkConfig.vpnPortal')">
             <n-input-group>
-              <n-input v-model:value="currentNetwork.config.vpnPortalAddr" type="text" :style="{ width: '70%' }">
-                <template #suffix>
-                  /24
+              <n-input
+                v-model:value="currentNetwork.config.vpn_portal_client_network_addr" type="text"
+                :style="{ width: '50%' }"
+              />
+              <n-input-number
+                v-model:value="currentNetwork.config.vpn_portal_client_network_len" :min="16" :max="32"
+                :style="{ width: '20%' }" :show-button="false" :step="1"
+              >
+                <template #prefix>
+                  /
+                </template>
+              </n-input-number>
+              <n-input
+                v-model:value="currentNetwork.config.vpn_portal_listen_port" type="text"
+                :style="{ width: '30%' }"
+              >
+                <template #prefix>
+                  :
                 </template>
               </n-input>
-              <n-input v-model:value="currentNetwork.config.vpnPortalPort" type="text" :style="{ width: '30%' }" />
             </n-input-group>
           </n-form-item>
         </n-form>

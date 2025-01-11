@@ -1,194 +1,58 @@
 use std::{
     collections::BTreeMap,
-    // net::Ipv4Addr,
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
+    sync::{Mutex, OnceLock},
 };
 
-use anyhow::Context;
-// use chrono::{DateTime, Local};
 use dashmap::DashMap;
 use era_xvlan::{
-    common::{
-        config::{ConfigLoader, NetworkIdentity, PeerConfig, TomlConfigLoader, VpnPortalConfig},
-        // global_ctx::GlobalCtxEvent,
-    },
-    launcher::{MyNodeInfo, NetworkInstance},
-    // rpc::{PeerInfo, Route},
-    proto::cli::{PeerInfo, Route},
-    utils::PeerRoutePair,
+    common::config::ConfigLoader,
+    launcher::{NetworkConfig, NetworkInstance, NetworkInstanceRunningInfo},
+    utils::NewFilterSender,
 };
-use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager as _, Runtime};
 
-#[derive(Deserialize, Serialize, Debug, Default)]
-#[serde(rename_all(serialize = "snake_case", deserialize = "camelCase"))]
-pub struct NetworkConfig {
-    id: String,
-    dhcp: bool,
-    ipv4: Option<String>,
-    device_name: Option<String>,
-    token: Option<String>,
-    network_name: Option<String>,
-    network_secret: Option<String>,
-    peer_urls: Vec<String>,
-    proxy_cidrs: Option<Vec<String>>,
-    vpn_portal_port: Option<u32>,
-    vpn_portal_addr: Option<String>,
-    listener_urls: Vec<String>,
-    rpc_port: Option<u32>,
-}
-
-impl NetworkConfig {
-    fn gen_config(&self) -> Result<TomlConfigLoader, anyhow::Error> {
-        let cfg = TomlConfigLoader::default();
-        cfg.set_id(
-            self.id
-                .parse()
-                .with_context(|| format!("failed to parse instance id: {}", self.id))?,
-        );
-        cfg.set_hostname(self.device_name.clone());
-
-        if self.network_name.is_none() && self.token.is_none() {
-            return Err(anyhow::anyhow!("no token or network provided"));
-        }
-
-        let (n_name, n_secret) = if self.network_name.is_none() {
-            let digest = md5::compute(self.token.clone().unwrap());
-            let str = format!("{:x}", digest);
-            (
-                str.get(0..8).unwrap_or_default().to_owned(),
-                str.get(8..).unwrap_or_default().to_owned(),
-            )
-        } else {
-            (
-                self.network_name.clone().unwrap(),
-                self.network_secret.clone().unwrap_or_default(),
-            )
-        };
-
-        cfg.set_inst_name(n_name.clone());
-        cfg.set_network_identity(NetworkIdentity::new(n_name, n_secret));
-
-        cfg.set_dhcp(self.dhcp);
-        if !self.dhcp && self.ipv4.is_some() {
-            if let Some(ipv4) = &self.ipv4 {
-                cfg.set_ipv4(Some(ipv4.parse().with_context(|| {
-                    format!("failed to parse ipv4 address: {}", ipv4)
-                })?))
-            }
-            // let ipv4 = self.ipv4.clone().unwrap();
-            // if ipv4.len() > 0 {
-            //     cfg.set_ipv4(Some(ipv4.parse::<Ipv4Addr>().with_context(|| {
-            //         format!("failed to parse ipv4 address: {:?}", self.ipv4)
-            //     })?))
-            // }
-        }
-
-        let mut peers = vec![];
-        for peer_url in self.peer_urls.iter() {
-            if peer_url.is_empty() {
-                continue;
-            }
-            peers.push(PeerConfig {
-                uri: peer_url
-                    .parse()
-                    .with_context(|| format!("failed to parse peer uri: {}", peer_url))?,
-            });
-        }
-
-        if peers.len() == 0 {
-            return Err(anyhow::anyhow!("no peer urls provided"));
-        }
-
-        cfg.set_peers(peers);
-
-        let mut listener_urls = vec![];
-        for listener_url in self.listener_urls.iter() {
-            if listener_url.is_empty() {
-                continue;
-            }
-            listener_urls.push(
-                listener_url
-                    .parse()
-                    .with_context(|| format!("failed to parse listener uri: {}", listener_url))?,
-            );
-        }
-        cfg.set_listeners(listener_urls);
-
-        if let Some(proxy_cidrs) = self.proxy_cidrs.clone() {
-            for n in proxy_cidrs.iter() {
-                cfg.add_proxy_cidr(
-                    n.parse()
-                        .with_context(|| format!("failed to parse proxy network: {}", n))?,
-                );
-            }
-        }
-
-        cfg.set_rpc_portal(
-            format!("127.0.0.1:{}", self.rpc_port.unwrap_or_default())
-                .parse()
-                .with_context(|| {
-                    format!(
-                        "failed to parse rpc portal port: {}",
-                        self.rpc_port.unwrap_or_default()
-                    )
-                })?,
-        );
-
-        if self.vpn_portal_addr.is_some() {
-            let cidr = format!("{}/24", self.vpn_portal_addr.clone().unwrap());
-            cfg.set_vpn_portal_config(VpnPortalConfig {
-                client_cidr: cidr
-                    .parse()
-                    .with_context(|| format!("failed to parse vpn portal client cidr: {}", cidr))?,
-                wireguard_listen: format!("0.0.0.0:{}", self.vpn_portal_port.unwrap_or(22022))
-                    .parse()
-                    .with_context(|| {
-                        format!(
-                            "failed to parse vpn portal wireguard listen port. {}",
-                            self.vpn_portal_port.unwrap_or(22022)
-                        )
-                    })?,
-            });
-        }
-
-        Ok(cfg)
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct NetworkInstanceInfo {
-    id: String,
-    node: MyNodeInfo,
-    events: Vec<String>,
-    // events: Vec<(DateTime<Local>, GlobalCtxEvent)>,
-    routes: Vec<Route>,
-    peers: Vec<PeerInfo>,
-    #[serde(rename(deserialize = "camelCase"))]
-    peer_route_pairs: Vec<PeerRoutePair>,
-    running: bool,
-    error: Option<String>,
-}
+pub const AUTOSTART_ARG: &str = "--autostart";
 
 static INSTANCE_MAP: once_cell::sync::Lazy<DashMap<String, NetworkInstance>> =
     once_cell::sync::Lazy::new(DashMap::new);
 
 static EMIT_INSTANCE_INFO: once_cell::sync::Lazy<AtomicBool> =
     once_cell::sync::Lazy::new(|| AtomicBool::new(false));
+pub static LOGGER_LEVEL_SENDER: OnceLock<Mutex<Option<NewFilterSender>>> = OnceLock::new();
+
+#[tauri::command]
+pub fn era_xvlan_version() -> Result<String, String> {
+    Ok(era_xvlan::VERSION.to_string())
+}
+
+#[tauri::command]
+pub fn is_autostart() -> Result<bool, String> {
+    let args: Vec<String> = std::env::args().collect();
+    println!("{:?}", args);
+    #[cfg(debug_assertions)]
+    eprintln!("args: {:?}", args); // 使用 eprintln!
+    Ok(args.contains(&crate::AUTOSTART_ARG.to_owned()))
+}
 
 #[tauri::command]
 pub fn parse_network_config(cfg: NetworkConfig) -> Result<String, String> {
-    let toml = cfg.gen_config().map_err(|e| e.to_string())?;
+    println!("cfg: {:?}", cfg);
+    eprintln!("cfg: {:?}", cfg); // 使用 eprintln!
+    let toml = cfg
+        .gen_config()
+        .map_err(|e| format!("failed to parse peer uri: {} cfg: {:?}", e.to_string(), cfg))?;
+    eprintln!("toml: {:?}", toml);
     Ok(toml.dump())
 }
 
 #[tauri::command]
 pub async fn start_network_instance(app: AppHandle, cfg: NetworkConfig) -> Result<(), String> {
-    if INSTANCE_MAP.contains_key(&cfg.id) {
+    if INSTANCE_MAP.contains_key(cfg.instance_id()) {
         return Err("instance already exists".to_string());
     }
-    let id = cfg.id.clone();
+    let id = cfg.instance_id().to_string();
     let cfg = cfg.gen_config().map_err(|e| e.to_string())?;
     let mut instance = NetworkInstance::new(cfg);
     instance.start().map_err(|e| e.to_string())?;
@@ -202,16 +66,7 @@ pub async fn start_network_instance(app: AppHandle, cfg: NetworkConfig) -> Resul
             loop {
                 for instance in INSTANCE_MAP.iter() {
                     if let Some(info) = instance.get_running_info() {
-                        ret.push(NetworkInstanceInfo {
-                            id: instance.key().clone().to_lowercase(),
-                            node: info.my_node_info.clone().unwrap(),
-                            events: info.events,
-                            routes: info.routes,
-                            peers: info.peers,
-                            peer_route_pairs: info.peer_route_pairs,
-                            running: info.running,
-                            error: info.error_msg,
-                        });
+                        ret.push(info);
                     }
                 }
 
@@ -245,37 +100,104 @@ pub fn stop_network_instance(id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn collect_network_infos() -> Result<BTreeMap<String, NetworkInstanceInfo>, String> {
+pub fn collect_network_infos() -> Result<BTreeMap<String, NetworkInstanceRunningInfo>, String> {
     let mut ret = BTreeMap::new();
     for instance in INSTANCE_MAP.iter() {
         if let Some(info) = instance.get_running_info() {
-            ret.insert(
-                instance.key().clone(),
-                NetworkInstanceInfo {
-                    id: instance.key().clone().to_lowercase(),
-                    node: info.my_node_info.clone().unwrap(),
-                    events: info.events,
-                    routes: info.routes,
-                    peers: info.peers,
-                    peer_route_pairs: info.peer_route_pairs,
-                    running: info.running,
-                    error: info.error_msg,
-                },
-            );
+            ret.insert(instance.key().clone(), info);
         }
     }
     Ok(ret)
 }
 
 #[tauri::command]
+pub fn get_os_hostname() -> Result<String, String> {
+    Ok(gethostname::gethostname().to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub fn set_logging_level(level: String) -> Result<(), String> {
+    let lock = LOGGER_LEVEL_SENDER.get_or_init(|| Mutex::new(None));
+    let sender = lock.lock().map_err(|e| e.to_string())?;
+
+    if sender.is_none() {
+        return Err("logger not initialized".to_string());
+    }
+
+    sender
+        .as_ref()
+        .unwrap()
+        .send(level)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+    // let sender = unsafe { LOGGER_LEVEL_SENDER.as_ref().unwrap() };
+    // sender.send(level).map_err(|e| e.to_string())?;
+    // Ok(())
+}
+
+#[tauri::command]
+pub fn set_tun_fd(instance_id: String, fd: i32) -> Result<(), String> {
+    let mut instance = INSTANCE_MAP
+        .get_mut(&instance_id)
+        .ok_or("instance not found")?;
+    instance.set_tun_fd(fd);
+    Ok(())
+}
+#[tauri::command]
 pub fn test_config(config: NetworkConfig) -> Result<NetworkConfig, String> {
     println!("{:?}", config);
     Ok(config)
 }
 
-#[tauri::command]
-pub fn is_autostart() -> Result<bool, String> {
-    let args: Vec<String> = std::env::args().collect();
-    println!("{:?}", args);
-    Ok(args.contains(&crate::AUTOSTART_ARG.to_owned()))
+pub fn toggle_window_visibility<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    if let Some(window) = app.get_webview_window("main") {
+        if window.is_visible().unwrap_or_default() {
+            let _ = window.hide();
+        } else {
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    }
+}
+
+pub fn check_sudo() -> bool {
+    let is_elevated = privilege::user::privileged();
+    if !is_elevated {
+        let Ok(exe) = std::env::current_exe() else {
+            return true;
+        };
+        let args: Vec<String> = std::env::args().collect();
+        let mut elevated_cmd = privilege::runas::Command::new(exe);
+        if args.contains(&AUTOSTART_ARG.to_owned()) {
+            elevated_cmd.arg(AUTOSTART_ARG);
+        }
+        let _ = elevated_cmd.force_prompt(true).hide(true).gui(true).run();
+    }
+    is_elevated
+}
+
+#[cfg(debug_assertions)]
+pub fn toggle_devtools<R: Runtime>(app_handle: &AppHandle<R>) -> tauri::Result<()> {
+    println!("toggled devtools for app");
+    #[cfg(debug_assertions)] // only include this code on debug builds
+    {
+        if let Some(window) = app_handle.get_webview_window("main") {
+            if !window.is_devtools_open() {
+                window.open_devtools();
+            } else {
+                window.close_devtools();
+            }
+        };
+    }
+    Ok({})
+}
+
+pub fn focus_window(app: &AppHandle) {
+    let windows: std::collections::HashMap<String, tauri::WebviewWindow> = app.webview_windows();
+    windows
+        .values()
+        .next()
+        .expect("Sorry, no window found")
+        .set_focus()
+        .expect("Can't Bring Window to Focus");
 }

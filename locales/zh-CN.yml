@@ -48,6 +48,7 @@ component:
     subnetProxy: 子网代理
     rpcPortal: RPC 端口
     listenerUrl: 监听地址
+    presetListenerUrl: 预置监听地址
     empty: 该组网配置不存在
     chooseOther: 选择其他组网配置
     reset: 重置

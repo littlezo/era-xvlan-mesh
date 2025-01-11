@@ -17,7 +17,7 @@ async function toggleConfigAutostart(enable: boolean) {
 const networkListOptions = computed(() => {
   return networkList.value.map(item => ({
     label: item.name,
-    value: item.config.id,
+    value: item.config.instance_id,
   }))
 })
 </script>

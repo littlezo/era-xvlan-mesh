@@ -1,36 +1,38 @@
-export interface NetworkConfig {
-  id: string
-  dhcp: boolean
-  ipv4?: string
-  deviceName?: string
+import { NetworkTypes } from '@era-xvlan/kit'
+
+export interface NetworkConfig extends NetworkTypes.NetworkConfig {
   token?: string
-  networkName?: string
-  networkSecret?: string
-  peerUrls: string[]
-  proxyCidrs?: string[]
-  vpnPortalAddr?: string
-  vpnPortalPort?: string
-  listenerUrls: string[]
-  rpcPort?: number
+  preset_peer_urls: { label: string, value: string }[]
+  preset_listener_urls: { label: string, value: string }[]
 }
 
 export function DEFAULT_NETWORK_CONFIG(): NetworkConfig {
   return {
-    id: uuid(),
+    ...NetworkTypes.DEFAULT_NETWORK_CONFIG(),
+    network_name: '',
     dhcp: true,
     token: uuid(6),
-    peerUrls: [
+    peer_urls: [
+      'tcp://xvlan.era-x.cn:11010',
+      'udp://xvlan.era-x.cn:11010',
+      'ws://xvlan.era-x.cn:11011',
+      'wss://xvlan.era-x.cn:11012',
+    ],
+    preset_peer_urls: [
       'tcp://xvlan.era-x.cn:11010',
       'udp://xvlan.era-x.cn:11010',
       'ws://xvlan.era-x.cn:11011',
       'wg://xvlan.era-x.cn:11011',
       'wss://xvlan.era-x.cn:11012',
-    ],
-    listenerUrls: [
+    ].map(value => ({ label: value, value })),
+    listener_urls: [],
+    preset_listener_urls: [
       'tcp://0.0.0.0:11010',
       'udp://0.0.0.0:11010',
+      'ws://0.0.0.0:11011',
       'wg://0.0.0.0:11011',
-    ],
+      'wss://0.0.0.0:11012',
+    ].map(value => ({ label: value, value })),
   }
 }
 
@@ -78,11 +80,12 @@ export interface NetworkInfoStack {
 }
 
 export interface NetworkInstanceInfo {
-  id: string
+  instance_id: string
   node: NodeInfo
+  my_node_inbfo: NodeInfo
   events: {
     time: string
-    event: EraXVlanEvent  
+    event: EraXVlanEvent
   }[]
   // Record<string, EraXVlanEvent>
   routes: Route[]

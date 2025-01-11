@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { arch, platform } from '@tauri-apps/plugin-os'
-import { availableLocales, loadLanguageAsync } from '~/modules/i18n'
 import NetworkList from '~/components/NetworkList.vue'
 import NetworkListAction from '~/components/NetworkListAction.vue'
+import { availableLocales, loadLanguageAsync } from '~/modules/i18n'
 
 const { locale, t } = useI18n()
 const appStore = useAppStore()

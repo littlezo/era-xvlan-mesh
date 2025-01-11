@@ -13,13 +13,14 @@
     "lint:fix": "eslint . --ignore-pattern src-tauri --fix"
   },
   "dependencies": {
+    "@era-xvlan/kit": "workspace:*",
     "@tauri-apps/api": "catalog:",
     "@tauri-apps/plugin-autostart": "catalog:",
     "@tauri-apps/plugin-notification": "catalog:",
     "@tauri-apps/plugin-os": "catalog:",
     "@tauri-apps/plugin-process": "catalog:",
     "@tauri-apps/plugin-shell": "catalog:",
-    "@unocss/reset": "^0.65.4",
+    "@unocss/reset": "catalog:",
     "@vueuse/core": "catalog:",
     "echarts": "catalog:",
     "highlight.js": "catalog:",

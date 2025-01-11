@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core'
 import type { NetworkConfig } from '~/types/network'
+import { invoke } from '@tauri-apps/api/core'
 
 export async function parseNetworkConfig(cfg: NetworkConfig) {
   return invoke('parse_network_config', { cfg })
@@ -15,6 +15,14 @@ export async function stopNetworkInstance(id: string) {
 
 export async function collectNetworkInfos() {
   return await invoke('collect_network_infos')
+}
+
+export async function setLoggingLevel(level: string) {
+  return await invoke('set_logging_level', { level })
+}
+
+export async function setTunFd(instanceId: string, fd: number) {
+  return await invoke('set_tun_fd', { instanceId, fd })
 }
 
 export async function test_config(cfg: NetworkConfig) {

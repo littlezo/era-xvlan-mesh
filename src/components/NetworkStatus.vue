@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Utils } from '@era-xvlan/kit'
+
 const { t } = useI18n()
 const networkStore = useNetworkStore()
 
@@ -18,8 +20,8 @@ const columns = computed(() => [
   {
     title: t('page.index.name'),
     key: 'name',
-    maxWidth: 200,
-    width: 100,
+    // width: 100,
+    minWidth: 100,
     ellipsis: {
       tooltip: true,
     },
@@ -28,6 +30,10 @@ const columns = computed(() => [
     title: t('page.index.ip'),
     key: 'ip',
     width: 140,
+    maxWidth: 140,
+    render(row: DataInfo) {
+      return row.ip ? Utils.ipv4InetToString(row.ip) : ''
+    },
   },
   {
     title: t('page.index.status'),
@@ -64,7 +70,7 @@ const columns = computed(() => [
   {
     title: t('page.index.lossRate'),
     key: 'lossRate',
-    width: 64,
+    width: 96,
     render(row: DataInfo) {
       return row.lossRate !== undefined ? `${Math.round(Number(row.lossRate) * 100)}%` : ''
     },
@@ -103,7 +109,7 @@ const countRx = computed(() => {
 </template>
 
 <style scoped lang="postcss">
-.n-statistic {
+  .n-statistic {
   &:deep(.n-statistic-value .n-statistic-value__content),
   &:deep(.n-statistic-value .n-statistic-value__suffix) {
     @apply !text-xl;

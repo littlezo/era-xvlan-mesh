@@ -20,6 +20,7 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       '~/': `${path.resolve(__dirname, 'src')}/`,
+      '@era-xvlan/kit': `${path.resolve(__dirname, 'node_modules', '@era-xvlan/kit/dist')}`,
     },
   },
 

@@ -1,6 +1,6 @@
-import { getCurrentWindow } from '@tauri-apps/api/window'
 import { Menu, MenuItem } from '@tauri-apps/api/menu'
 import { TrayIcon } from '@tauri-apps/api/tray'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { exit } from '@tauri-apps/plugin-process'
 import pkg from '~/../package.json'
 
@@ -37,7 +37,7 @@ export async function useTray(init: boolean = false) {
 }
 
 export async function generateMenuItem() {
-  // @ts-ignore
+  // @ts-expect-error TS2339: Property 'app' does not exist on type 'typeof import("/Volumes/meta/project/era-xvlan/node_modules/@tauri-apps/api/window")'.
   return [
     await MenuItemExit(),
     await MenuItemShow(),

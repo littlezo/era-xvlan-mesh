@@ -1,18 +1,19 @@
+<!-- eslint-disable no-console -->
 <script setup lang="ts">
+import type { UnlistenFn } from '@tauri-apps/api/event'
+import type { InstanceEvent, Network, NetworkInstanceInfo } from './types/network'
+import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { exit } from '@tauri-apps/plugin-process'
 import hljs from 'highlight.js'
-import type { UnlistenFn } from '@tauri-apps/api/event'
-import { listen } from '@tauri-apps/api/event'
 import { darkTheme, dateZhCN, zhCN } from 'naive-ui'
-import type { InstanceEvent, Network, NetworkInstanceInfo } from './types/network'
 
 const { locale, t } = useI18n()
 const appStore = useAppStore()
 const networkStore = useNetworkStore()
 const { isDark, config } = storeToRefs(appStore)
-const { pushInfoStack, startNetwork } = networkStore
-const { networkInfo, networkList } = storeToRefs(networkStore)
+const { pushInfoStack, startNetwork, setLoggingLevel } = networkStore
+const { networkInfo, networkList, currentNetworkInfo } = storeToRefs(networkStore)
 
 const theme = computed(() => (isDark.value ? darkTheme : null))
 
@@ -32,6 +33,7 @@ async function closeCallback() {
 useTray(true)
 
 onBeforeMount(async () => {
+  setLoggingLevel('debug')
   if (await isAutostart()) {
     await getCurrentWindow().hide()
     config.value.autostart.network.forEach(async (id) => {
@@ -41,27 +43,28 @@ onBeforeMount(async () => {
 })
 
 onMounted(async () => {
+  console.log(currentNetworkInfo.value)
   eventListen.value = await listen<InstanceEvent>('era://xvlan/event', (event) => {
-    console.log({ 'era://xvlan/event':event})
+    console.log({ 'era://xvlan/event': event })
   })
   infoListen.value = await listen<NetworkInstanceInfo[]>('era://xvlan/mesh/info', (event) => {
-    // console.log({"era://xvlan/mesh/info":event})
-    networkInfo.value = [...event.payload]
+    console.log({ 'era://xvlan/mesh/info': event })
+    networkInfo.value = [...event.payload].map(x => ({ ...x, node: x?.my_node_info }))
     networkList.value.forEach((n: Network) => {
-      const p = event.payload.find(i => i.id === n.config.id.toLowerCase())
+      // console.log(n.config.instance_id, event.payload[0].instance_id.toLowerCase())
+      const p = event.payload.find(i => i.instance_id === n.config.instance_id.toLowerCase())
       const events = p?.events
       if (events && Array.isArray(events)) {
-        // @ts-ignore
         p.events = events.map((e: string) => JSON.parse(e) as NetworkInstanceInfo['events'][0])
       }
       if (p) {
         n.detail = p
-        pushInfoStack(n.config.id, p)
+        pushInfoStack(n.config.instance_id, p)
       }
     })
   })
   requestListen.value = await listen<InstanceEvent>('era://xvlan/mesh/window/close', () => {
-    console.log('era://xvlan/mesh/window/close')  
+    console.log('era://xvlan/mesh/window/close')
     closeModel.value = true
   })
 })
