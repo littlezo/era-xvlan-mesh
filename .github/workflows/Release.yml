@@ -10,7 +10,7 @@ defaults:
   run:
     # necessary for windows
     shell: bash
-    
+
 env:
   STORE_PATH: ${{ github.workspace }}/.pnpm-store
 

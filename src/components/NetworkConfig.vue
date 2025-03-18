@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { hostname } from '@tauri-apps/plugin-os'
-import { h } from 'vue'
 
 const appStore = useAppStore()
 const networkStore = useNetworkStore()
@@ -93,7 +92,7 @@ onMounted(async () => {
           </n-form-item>
           <n-form-item :label="t('component.networkConfig.peer')">
             <n-select
-              v-model:value="currentNetwork.config.peer_urls" filterable tag multiple
+              v-model:value="currentNetwork.config.peer_urls" multiple filterable tag
               :options="currentNetwork.config.preset_peer_urls"
               :placeholder="t('component.networkConfig.peerPlaceholder')"
             />

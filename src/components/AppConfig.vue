@@ -33,7 +33,7 @@ const networkListOptions = computed(() => {
           </n-flex>
         </template>
         <n-select
-          v-model:value="config.autostart.network" :disabled="!config.autostart.enable" multiple clearable
+          v-model:value="config.autostart.network" :disabled="!config.autostart.enable" clearable multiple
           :options="networkListOptions"
         />
       </n-form-item>

@@ -1,6 +1,6 @@
 [package]
 name = "era-xvlan-mesh"
-version = "0.1.0"
+version = "0.1.1"
 description = "Era XVlan Mesh"
 authors = ["EraXvlan Developers <<x@era-x.cn>>"]
 edition = "2021"
